@@ -268,6 +268,7 @@ class _GridAppState extends State<GridApp> {
 
   void sendImageToWhatsApp() async {
     if (imagePath != null) {
+      // ignore: deprecated_member_use
       await Share.shareFiles([imagePath!.path], text: '');
     } else {
       throw 'No image selected';
@@ -279,7 +280,7 @@ class _GridAppState extends State<GridApp> {
     return Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.grey.shade900,
-          title: const Text('Grid 2 '),
+          title: const Text('Grid App'),
           actions: <Widget>[
             IconButton(
               onPressed: resetImageAndGrid,
@@ -299,39 +300,46 @@ class _GridAppState extends State<GridApp> {
                       fit: BoxFit.cover,
                     ),
                   if (showGrid)
-                    GridView.builder(
-                      itemCount: rows * columns,
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: columns,
+                    if (showGrid)
+                      GridView.builder(
+                        itemCount: rows * columns,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: columns,
+                        ),
+                        itemBuilder: (context, index) {
+                          final row = index ~/ columns + 1;
+                          final column = index % columns + 1;
+                          String text = '';
+                          if (row == 1 || column == 1) {
+                            if (row == 1 && column == 1) {
+                              // Main row and column intersection
+                              text = '$column';
+                            } else if (row == 1) {
+                              // Main row
+                              text = '$column';
+                            } else {
+                              // Main column
+                              text = '$row';
+                            }
+                          }
+                          return Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: gridColor,
+                                width: lineWidth,
+                              ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                text,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
                       ),
-                      itemBuilder: (context, index) {
-                        final columnIndex = index % columns + 1;
-                        final rowIndex = index ~/ columns + 1;
-
-                        return Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: gridColor,
-                              width: lineWidth,
-                            ),
-                          ),
-                          child: Center(
-                            child: Text(
-                              showNumbers // Check the showNumbers variable
-                                  ? (columnIndex == 1 || rowIndex == 1)
-                                      ? (columnIndex == 1 && rowIndex == 1)
-                                          ? '1'
-                                          : columnIndex == 1
-                                              ? '$rowIndex'
-                                              : '$columnIndex'
-                                      : ''
-                                  : '', // Empty text for other cells
-                              style: const TextStyle(fontSize: 16),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
                   if (imagePath == null &&
                       !showGrid) // Display message when nothing is selected
                     GestureDetector(
