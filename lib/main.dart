@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:image_cropper/image_cropper.dart';
@@ -5,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:share_plus/share_plus.dart';
 import 'dart:io';
 import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:screenshot/screenshot.dart';
 
 void main() => runApp(const MyApp());
 
@@ -37,8 +40,11 @@ class _GridAppState extends State<GridApp> {
   File? imagePath;
   CroppedFile? _croppedFile;
   bool showGrid = false;
-  double gridWidth = 0; // Add this to store the grid width
-  double gridHeight = 0; // Add this to store the grid height
+  double gridWidth = 0;
+  double gridHeight = 0;
+  final ScreenshotController screenshotController =
+      ScreenshotController(); // Add this line
+
   void changeGridColor(Color color) {
     setState(() {
       gridColor = color;
@@ -84,7 +90,7 @@ class _GridAppState extends State<GridApp> {
   void resetImageAndGrid() {
     setState(() {
       imagePath = null;
-      showGrid = false; // Hide the grid
+      showGrid = false;
     });
   }
 
@@ -94,7 +100,7 @@ class _GridAppState extends State<GridApp> {
       final file = File(image.path);
       setState(() {
         imagePath = file;
-        showGrid = true; // Show the grid when an image is selected
+        showGrid = true;
       });
       final img = await _cropImage(imagefile: file);
 
@@ -158,7 +164,6 @@ class _GridAppState extends State<GridApp> {
             setState(() {
               gridWidth = info.image.width.toDouble();
               gridHeight = info.image.height.toDouble();
-              // Calculate the number of rows and columns based on image dimensions
               rows = gridHeight ~/ (gridHeight / rows);
               columns = gridWidth ~/ (gridWidth / columns);
             });
@@ -181,6 +186,7 @@ class _GridAppState extends State<GridApp> {
         return ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(30.0)),
           child: Container(
+            color: Colors.grey.shade900,
             padding: const EdgeInsets.all(16),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -196,7 +202,6 @@ class _GridAppState extends State<GridApp> {
                     child: GestureDetector(
                       onTap: () async {
                         await pickImage(imageSource: ImageSource.gallery);
-                        // ignore: use_build_context_synchronously
                         Navigator.pop(context);
                       },
                       child: const Row(
@@ -226,7 +231,6 @@ class _GridAppState extends State<GridApp> {
                     child: GestureDetector(
                       onTap: () async {
                         await pickImage(imageSource: ImageSource.camera);
-                        // ignore: use_build_context_synchronously
                         Navigator.pop(context);
                       },
                       child: const Row(
@@ -252,45 +256,61 @@ class _GridAppState extends State<GridApp> {
     );
   }
 
-  void saveImageToGallery() async {
-    if (imagePath != null) {
-      final result = await ImageGallerySaver.saveFile(imagePath!.path);
-      print('Image saved to gallery: $result');
-      // ignore: use_build_context_synchronously
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Image saved to gallery'),
-          duration: Duration(seconds: 3),
-        ),
-      );
-    }
-  }
-
   void sendImageToWhatsApp() async {
     if (imagePath != null) {
       // ignore: deprecated_member_use
       await Share.shareFiles([imagePath!.path], text: '');
     } else {
-      throw 'No image selected';
+      print('No image selected');
+    }
+  }
+
+  void saveImageWithGrid() async {
+    try {
+      final image = await screenshotController.capture();
+      if (image != null) {
+        final result =
+            await ImageGallerySaver.saveImage(Uint8List.fromList(image));
+        if (result != null && result.isNotEmpty) {
+          print('Image with grid saved to gallery: $result');
+
+          // ignore: use_build_context_synchronously
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Image with grid saved to gallery'),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        } else {
+          print('Error: Unable to save image to gallery');
+        }
+      } else {
+        print('Error: Captured image is null');
+      }
+    } catch (e) {
+      print('Error saving image with grid: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.grey.shade900,
-          title: const Text('Grid App'),
-          actions: <Widget>[
-            IconButton(
-              onPressed: resetImageAndGrid,
-              icon: const Icon(Icons.refresh),
-            ),
-          ],
-        ),
-        body: Column(
-          children: <Widget>[
-            Expanded(
+      backgroundColor: Colors.grey.shade900,
+      appBar: AppBar(
+        backgroundColor: const Color.fromARGB(255, 26, 25, 25),
+        title: const Text('Grid App'),
+        actions: <Widget>[
+          IconButton(
+            onPressed: resetImageAndGrid,
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
+      ),
+      body: Column(
+        children: <Widget>[
+          Expanded(
+            child: Screenshot(
+              controller: screenshotController,
               child: Stack(
                 alignment: Alignment.center,
                 children: [
@@ -300,65 +320,59 @@ class _GridAppState extends State<GridApp> {
                       fit: BoxFit.cover,
                     ),
                   if (showGrid)
-                    if (showGrid)
-                      GridView.builder(
-                        itemCount: rows * columns,
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: columns,
-                        ),
-                        itemBuilder: (context, index) {
-                          final row = index ~/ columns + 1;
-                          final column = index % columns + 1;
-                          String text = '';
-                          if (row == 1 || column == 1) {
-                            if (row == 1 && column == 1) {
-                              // Main row and column intersection
-                              text = '$column';
-                            } else if (row == 1) {
-                              // Main row
-                              text = '$column';
-                            } else {
-                              // Main column
-                              text = '$row';
-                            }
-                          }
-                          return Container(
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: gridColor,
-                                width: lineWidth,
-                              ),
-                            ),
-                            child: Center(
-                              child: Text(
-                                text,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ),
-                          );
-                        },
+                    GridView.builder(
+                      itemCount: rows * columns,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: columns,
                       ),
-                  if (imagePath == null &&
-                      !showGrid) // Display message when nothing is selected
+                      itemBuilder: (context, index) {
+                        final row = index ~/ columns + 1;
+                        final column = index % columns + 1;
+                        String text = '';
+                        if (row == 1 || column == 1) {
+                          if (row == 1 && column == 1) {
+                            text = '$column';
+                          } else if (row == 1) {
+                            text = '$column';
+                          } else {
+                            text = '$row';
+                          }
+                        }
+                        return Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: gridColor,
+                              width: lineWidth,
+                            ),
+                          ),
+                          child: Center(
+                            child: Text(
+                              text,
+                              style: const TextStyle(
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  if (imagePath == null && !showGrid)
                     GestureDetector(
                       onTap: () {
                         showImageSourceSelection();
                       },
                       child: Container(
-                        color: Colors.transparent,
+                        color: Colors.grey.shade900,
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Center(
                               child: Container(
-                                width: 80, // Adjust the width as needed
-                                height: 80, // Adjust the height as needed
+                                width: 80,
+                                height: 80,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color:
-                                      Colors.grey.shade800, // Background color
+                                  color: Colors.grey.shade800,
                                 ),
                                 child: IconButton(
                                   onPressed: () {
@@ -366,8 +380,8 @@ class _GridAppState extends State<GridApp> {
                                   },
                                   icon: const Icon(
                                     Icons.add,
-                                    size: 30, // Adjust the size as needed
-                                    color: Colors.white, // Icon color
+                                    size: 30,
+                                    color: Colors.white,
                                   ),
                                 ),
                               ),
@@ -378,7 +392,9 @@ class _GridAppState extends State<GridApp> {
                             Text(
                               'Tap anywhere to add photo',
                               style: TextStyle(
-                                  color: Colors.grey.shade500, fontSize: 16),
+                                color: Colors.grey.shade500,
+                                fontSize: 16,
+                              ),
                             )
                           ],
                         ),
@@ -387,184 +403,181 @@ class _GridAppState extends State<GridApp> {
                 ],
               ),
             ),
-            if (imagePath !=
-                null) // Only show these controls if an image is selected
-              Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: <Widget>[
-                        Container(
-                          color: Colors.blue.shade100,
-                          child: Column(
-                            children: [
-                              const SizedBox(
-                                height: 5,
-                              ),
-                              const Text(
-                                'Rows',
-                                style: TextStyle(color: Colors.black),
-                              ),
-                              Row(
-                                children: [
-                                  IconButton(
-                                    onPressed: increaseRows,
-                                    icon: const Icon(Icons.add,
-                                        color: Colors.black),
+          ),
+          if (imagePath != null)
+            Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: <Widget>[
+                      Container(
+                        color: Colors.blue.shade100,
+                        child: Column(
+                          children: [
+                            const SizedBox(
+                              height: 5,
+                            ),
+                            const Text(
+                              'Rows',
+                              style: TextStyle(color: Colors.black),
+                            ),
+                            Row(
+                              children: [
+                                IconButton(
+                                  onPressed: increaseRows,
+                                  icon: const Icon(Icons.add,
+                                      color: Colors.black),
+                                ),
+                                IconButton(
+                                  onPressed: decreaseRows,
+                                  icon: const Icon(Icons.minimize,
+                                      color: Colors.black),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: const Text('Pick a Color'),
+                                content: SingleChildScrollView(
+                                  child: ColorPicker(
+                                    pickerColor: gridColor,
+                                    onColorChanged: changeGridColor,
+                                    showLabel: true,
+                                    pickerAreaHeightPercent: 0.8,
                                   ),
-                                  IconButton(
-                                    onPressed: decreaseRows,
-                                    icon: const Icon(Icons.minimize,
-                                        color: Colors.black),
+                                ),
+                                actions: <Widget>[
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                    child: const Text('OK'),
                                   ),
                                 ],
-                              ),
-                            ],
-                          ),
+                              );
+                            },
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue.shade100,
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
                         ),
-                        ElevatedButton(
-                          onPressed: () {
-                            showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return AlertDialog(
-                                  title: const Text('Pick a Color'),
-                                  content: SingleChildScrollView(
-                                    child: ColorPicker(
-                                      pickerColor: gridColor,
-                                      onColorChanged: changeGridColor,
-                                      // ignore: deprecated_member_use
-                                      showLabel: true,
-                                      pickerAreaHeightPercent: 0.8,
-                                    ),
-                                  ),
-                                  actions: <Widget>[
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                      },
-                                      child: const Text('OK'),
-                                    ),
-                                  ],
-                                );
-                              },
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue.shade100,
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 8.0),
-                          ),
-                          child: const Text(
-                            'Change Color',
-                            style: TextStyle(color: Colors.black),
-                          ),
+                        child: const Text(
+                          'Change Color',
+                          style: TextStyle(color: Colors.black),
                         ),
-                      ],
+                      ),
+                    ],
+                  ),
+                ),
+                Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton(
+                        onPressed: toggleShowNumbers,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        ),
+                        child:
+                            Text(showNumbers ? 'Hide Numbers' : 'Show Numbers'),
+                      ),
+                      ElevatedButton(
+                        onPressed: increaseLineWidth,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        ),
+                        child: const Text('Inc Line Width'),
+                      ),
+                      ElevatedButton(
+                        onPressed: decreaseLineWidth,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        ),
+                        child: const Text('Dec Line Width'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          if (imagePath != null)
+            const SizedBox(
+              height: 10,
+            ),
+          if (imagePath != null)
+            Column(
+              children: [
+                Container(
+                  width: 150,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: Colors.black,
+                      width: 1,
                     ),
                   ),
-                  Center(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ElevatedButton(
-                          onPressed: toggleShowNumbers,
-                          style: ElevatedButton.styleFrom(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 8.0),
-                          ),
-                          child: Text(
-                              showNumbers ? 'Hide Numbers' : 'Show Numbers'),
-                        ),
-                        ElevatedButton(
-                          onPressed: increaseLineWidth,
-                          style: ElevatedButton.styleFrom(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 8.0),
-                          ),
-                          child: const Text('Inc Line Width'),
-                        ),
-                        ElevatedButton(
-                          onPressed: decreaseLineWidth,
-                          style: ElevatedButton.styleFrom(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 8.0),
-                          ),
-                          child: const Text('Dec Line Width'),
-                        ),
-                      ],
+                  child: TextButton(
+                    onPressed: () {
+                      sendImageToWhatsApp();
+                    },
+                    child: const Center(
+                      child: Text('Sent to WhatsApp'),
                     ),
                   ),
-                ],
-              ),
-            if (imagePath != null)
-              const SizedBox(
-                height: 10,
-              ),
-            if (imagePath != null)
-              Column(
-                children: [
-                  Container(
-                    width: 150,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: Colors.black,
-                        width: 1,
-                      ),
-                    ),
-                    child: TextButton(
-                      onPressed: () {
-                        sendImageToWhatsApp();
-                      },
-                      child: const Center(
-                        child: Text('Sent to WhatsApp'),
-                      ),
+                ),
+                const SizedBox(height: 5),
+                Container(
+                  width: 150,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: Colors.black,
+                      width: 1,
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  Container(
-                    width: 150,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: Colors.black,
-                        width: 1,
-                      ),
-                    ),
-                    child: TextButton(
-                      onPressed: () {
-                        saveImageToGallery();
-                      },
-                      child: const Center(
-                        child: Text('Save to Gallery'),
-                      ),
+                  child: TextButton(
+                    onPressed: () {
+                      saveImageWithGrid();
+                    },
+                    child: const Center(
+                      child: Text('Save to Gallery'),
                     ),
                   ),
-                  Container(
-                    width: 150,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: Colors.black,
-                        width: 1,
-                      ),
-                    ),
-                    child: TextButton(
-                      onPressed: () {
-                        reCropImage();
-                      },
-                      child: const Center(
-                        child: Text('Re-Crop Image'),
-                      ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  width: 150,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: Colors.black,
+                      width: 1,
                     ),
                   ),
-                ],
-              ),
-            const SizedBox(height: 20),
-          ],
-        ));
+                  child: TextButton(
+                    onPressed: () {
+                      reCropImage();
+                    },
+                    child: const Center(
+                      child: Text('Re-Crop Image'),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
   }
 }
