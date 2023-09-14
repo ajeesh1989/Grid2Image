@@ -205,19 +205,19 @@ class _GridAppState extends State<GridApp> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const SizedBox(height: 10),
-                Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30.0),
-                  ),
-                  elevation: 8,
-                  child: SizedBox(
-                    height: 50,
-                    child: GestureDetector(
-                      onTap: () async {
-                        await pickImage(imageSource: ImageSource.gallery);
-                        Navigator.pop(context);
-                      },
-                      child: const Row(
+                GestureDetector(
+                  onTap: () async {
+                    await pickImage(imageSource: ImageSource.gallery);
+                    Navigator.pop(context);
+                  },
+                  child: Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30.0),
+                    ),
+                    elevation: 8,
+                    child: const SizedBox(
+                      height: 50,
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.image),
@@ -234,19 +234,19 @@ class _GridAppState extends State<GridApp> {
                 const SizedBox(height: 16),
                 const Text('OR'),
                 const SizedBox(height: 16),
-                Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30.0),
-                  ),
-                  elevation: 8,
-                  child: SizedBox(
-                    height: 50,
-                    child: GestureDetector(
-                      onTap: () async {
-                        await pickImage(imageSource: ImageSource.camera);
-                        Navigator.pop(context);
-                      },
-                      child: const Row(
+                GestureDetector(
+                  onTap: () async {
+                    await pickImage(imageSource: ImageSource.camera);
+                    Navigator.pop(context);
+                  },
+                  child: Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30.0),
+                    ),
+                    elevation: 8,
+                    child: const SizedBox(
+                      height: 50,
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.camera_alt_outlined),
@@ -284,7 +284,7 @@ class _GridAppState extends State<GridApp> {
           // Share the temporary file
           // ignore: deprecated_member_use
           await Share.shareFiles([tempFile.path],
-              text: 'Check out this image made with GridPic');
+              text: 'Check out this image made with Grid');
         } else {
           print('Error: Captured image is null');
         }
