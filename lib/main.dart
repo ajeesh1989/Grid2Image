@@ -284,7 +284,7 @@ class _GridAppState extends State<GridApp> {
           // Share the temporary file
           // ignore: deprecated_member_use
           await Share.shareFiles([tempFile.path],
-              text: 'Check out this image made with Grid');
+              text: 'Check out this image made with GridPic');
         } else {
           print('Error: Captured image is null');
         }
