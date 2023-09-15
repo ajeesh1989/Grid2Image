@@ -43,7 +43,6 @@ class _GridAppState extends State<GridApp> {
   bool showNumbers = true;
   double lineWidth = 1.0;
   File? imagePath;
-  CroppedFile? _croppedFile;
   bool showGrid = false;
   double gridWidth = 0;
   double gridHeight = 0;
@@ -305,7 +304,6 @@ class _GridAppState extends State<GridApp> {
         if (result != null && result.isNotEmpty) {
           print('Image with grid saved to gallery: $result');
 
-          // ignore: use_build_context_synchronously
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Image with grid saved to gallery'),

@@ -42,6 +42,7 @@ dependencies:
   image_gallery_saver: ^2.0.3
   screenshot: ^2.1.0
   colorpicker_flutter: ^1.0.3
+  flutter_image_compress: ^2.0.4
 
 dev_dependencies:
   flutter_test:
