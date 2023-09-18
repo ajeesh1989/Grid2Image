@@ -43,6 +43,8 @@ dependencies:
   screenshot: ^2.1.0
   colorpicker_flutter: ^1.0.3
   flutter_image_compress: ^2.0.4
+  image: ^4.0.17
+  flutter_cache_manager: ^3.3.1
 
 dev_dependencies:
   flutter_test:

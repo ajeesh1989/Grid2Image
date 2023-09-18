@@ -50,6 +50,12 @@ class _GridAppState extends State<GridApp> {
       ScreenshotController(); // Add this line
   Color numberColor = Colors.white; // Added color for numbers
   bool isGridVisible = true;
+  bool isBlackAndWhite = false;
+  void toggleBlackAndWhite() {
+    setState(() {
+      isBlackAndWhite = !isBlackAndWhite;
+    });
+  }
 
   void changeGridColor(Color color) {
     setState(() {
@@ -339,6 +345,14 @@ class _GridAppState extends State<GridApp> {
             onPressed: resetImageAndGrid,
             icon: Icon(Icons.refresh, color: Colors.grey.shade400),
           ),
+          // IconButton(
+          //   onPressed:
+          //       toggleBlackAndWhite, // Call the function when the button is pressed
+          //   icon: Icon(
+          //     isBlackAndWhite ? Icons.color_lens : Icons.grain,
+          //     color: Colors.grey.shade400,
+          //   ),
+          // ),
           const SizedBox(
             width: 5,
           ),
@@ -354,9 +368,20 @@ class _GridAppState extends State<GridApp> {
                 children: [
                   // Render the image
                   if (imagePath != null)
-                    Image.file(
-                      imagePath!,
-                      fit: BoxFit.cover,
+                    ColorFiltered(
+                      colorFilter: isBlackAndWhite
+                          ? ColorFilter.mode(
+                              Colors.grey,
+                              BlendMode.saturation,
+                            )
+                          : ColorFilter.mode(
+                              Colors.transparent,
+                              BlendMode.color,
+                            ),
+                      child: Image.file(
+                        imagePath!,
+                        fit: BoxFit.cover,
+                      ),
                     ),
 
                   // Render the grid conditionally
@@ -483,6 +508,12 @@ class _GridAppState extends State<GridApp> {
                                     ),
                                   ),
                                   const SizedBox(width: 10),
+                                  Text(
+                                    currentRows.toString(),
+                                    style: const TextStyle(
+                                        color: Colors.white, fontSize: 20),
+                                  ),
+                                  const SizedBox(width: 10),
                                   Box(
                                     child: IconButton(
                                       onPressed: increaseRows,
@@ -519,6 +550,12 @@ class _GridAppState extends State<GridApp> {
                                     ),
                                   ),
                                   const SizedBox(width: 10),
+                                  Text(
+                                    lineWidth.toString(),
+                                    style: const TextStyle(
+                                        color: Colors.white, fontSize: 20),
+                                  ),
+                                  const SizedBox(width: 10),
                                   Box(
                                     child: IconButton(
                                       onPressed: increaseLineWidth,
@@ -536,123 +573,148 @@ class _GridAppState extends State<GridApp> {
                     const SizedBox(height: 15),
                     Padding(
                       padding: const EdgeInsets.all(10.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          ElevatedButton(
-                            onPressed: () {
-                              showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return AlertDialog(
-                                    title: const Text('Pick a Color'),
-                                    content: SingleChildScrollView(
-                                      child: ColorPicker(
-                                        pickerColor: gridColor,
-                                        onColorChanged: changeGridColor,
-                                        // ignore: deprecated_member_use
-                                        showLabel: true,
-                                        pickerAreaHeightPercent: 0.8,
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            ElevatedButton(
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title: const Text('Pick a Color'),
+                                      content: SingleChildScrollView(
+                                        child: ColorPicker(
+                                          pickerColor: gridColor,
+                                          onColorChanged: changeGridColor,
+                                          // ignore: deprecated_member_use
+                                          showLabel: true,
+                                          pickerAreaHeightPercent: 0.8,
+                                        ),
                                       ),
-                                    ),
-                                    actions: <Widget>[
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.of(context).pop();
-                                        },
-                                        child: const Text('OK'),
+                                      actions: <Widget>[
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.of(context).pop();
+                                          },
+                                          child: const Text('OK'),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.grey.shade800,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16.0,
+                                  vertical: 8.0,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                      10.0), // Adjust the radius as needed
+                                ),
+                              ),
+                              child: const Text(
+                                'Grid Color',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                            const SizedBox(
+                              width: 5,
+                            ),
+                            ElevatedButton(
+                              onPressed: toggleShowNumbers,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.grey.shade800,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16.0,
+                                  vertical: 8.0,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                      10.0), // Adjust the radius as needed
+                                ),
+                              ),
+                              child: Text(
+                                showNumbers ? 'Hide Num' : 'Show Num',
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                            ElevatedButton(
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title: const Text('Pick a Color'),
+                                      content: SingleChildScrollView(
+                                        child: ColorPicker(
+                                          pickerColor: numberColor,
+                                          onColorChanged: changeNumberColor,
+                                          // ignore: deprecated_member_use
+                                          showLabel: true,
+                                          pickerAreaHeightPercent: 0.8,
+                                        ),
                                       ),
-                                    ],
-                                  );
-                                },
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.grey.shade800,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16.0,
-                                vertical: 8.0,
+                                      actions: <Widget>[
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.of(context).pop();
+                                          },
+                                          child: const Text('OK'),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.grey.shade800,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16.0,
+                                  vertical: 8.0,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                      10.0), // Adjust the radius as needed
+                                ),
                               ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                    10.0), // Adjust the radius as needed
-                              ),
-                            ),
-                            child: const Text(
-                              'Grid Color',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          ),
-                          const SizedBox(
-                            width: 5,
-                          ),
-                          ElevatedButton(
-                            onPressed: toggleShowNumbers,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.grey.shade800,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16.0,
-                                vertical: 8.0,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                    10.0), // Adjust the radius as needed
+                              child: const Text(
+                                'Num Color',
+                                style: TextStyle(color: Colors.white),
                               ),
                             ),
-                            child: Text(
-                              showNumbers ? 'Hide Numbers' : 'Show Numbers',
-                              style: const TextStyle(
-                                fontSize: 15,
-                                color: Colors.white,
+                            const SizedBox(width: 5),
+                            ElevatedButton(
+                              onPressed: toggleBlackAndWhite,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.grey.shade800,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16.0,
+                                  vertical: 8.0,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                      10.0), // Adjust the radius as needed
+                                ),
+                              ),
+                              child: Text(
+                                isBlackAndWhite ? 'Original' : 'B & W',
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 5),
-                          ElevatedButton(
-                            onPressed: () {
-                              showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return AlertDialog(
-                                    title: const Text('Pick a Color'),
-                                    content: SingleChildScrollView(
-                                      child: ColorPicker(
-                                        pickerColor: numberColor,
-                                        onColorChanged: changeNumberColor,
-                                        // ignore: deprecated_member_use
-                                        showLabel: true,
-                                        pickerAreaHeightPercent: 0.8,
-                                      ),
-                                    ),
-                                    actions: <Widget>[
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.of(context).pop();
-                                        },
-                                        child: const Text('OK'),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.grey.shade800,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16.0,
-                                vertical: 8.0,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                    10.0), // Adjust the radius as needed
-                              ),
-                            ),
-                            child: const Text(
-                              'Num Color',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                     if (imagePath != null)
